@@ -32,7 +32,7 @@ def sort_close_earnings():
         writer = csv.writer(to_write)
         for row in my_list[1:]:
             announce_date = datetime.datetime.strptime(row[2], '%Y-%m-%d').date()
-            if (announce_date - current).days < 7:
+            if (announce_date - current).days < 3:
                 result.append(row)
                 writer.writerow(row)
 
