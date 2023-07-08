@@ -28,7 +28,6 @@ def send_message() -> None:
             text=f"Ticker(종목코드): {row[0]} 종목명: {row[1]} 실적발표: {row[2]}"
             )
     bot.sendMessage(chat_id=chat_id, text="집중관찰하고 싶은 종목코드를 ,로 구분하여 작성해주세요.")
-    manufact_data.append_input_totalrevenue()
 # asyncio.run(send_message())
 
 def echo(update: telegram.Update=None, context=None) -> List[str]:

@@ -39,54 +39,28 @@ def sort_close_earnings() -> List[List[str]]:
         writer = csv.writer(to_write)
         for row in get_earnings_calendar()[1:]:
             announce_date = datetime.datetime.strptime(row[2], '%Y-%m-%d').date()
+
             if (announce_date - current).days < 3 and row[4] != '':
-                sort_result.append(row)
-                writer.writerow(row)
+                symbol = row[0]
+                get_income_statement: str = f'https://www.alphavantage.co/query?function=INCOME_STATEMENT&symbol={symbol}&apikey={api_key}'
+                
+                
+                response = requests.get(get_income_statement)
+                income_statement = response.json()
+                if "quarterlyReports" in income_statement and int(income_statement["quarterlyReports"][0]["totalRevenue"]) > 10000000:
+                    recent_total_revenue = income_statement["quarterlyReports"][0]["totalRevenue"]
+                    row.append(recent_total_revenue)
+                    sort_result.append(row)
+                    writer.writerow(row)
 
     return sort_result
 
-def append_input_totalrevenue() -> List[str]:
-    """
-    append totalrevenue from user input & close earnings
-    """
+sort_close_earnings()
 
-    with open('sort_earnings.csv', 'r', encoding="utf-8") as to_read:
-        reader = csv.reader(to_read)
-        rows = list(reader)
+# Q. 2번 파일에서 1번 파일을 호출한 후, 1번 파일에서 2번 파일을 다시 호출해도되나?
 
-    for row in rows:
-        symbol = row[0]
-        income_statement: str = f'https://www.alphavantage.co/query?function=INCOME_STATEMENT&symbol={symbol}&apikey={api_key}'
-        total_revenue = session.get(income_statement)
-        row.append(total_revenue)
-
-    with open('sort_earnings.csv','w', encoding = "utf-8", newline='') as to_write:
-        writer = csv.writer(to_write)
-        writer.writerows(rows)
-
-# sort_close_earnings()
-
-with open('sort_earnings.csv', 'r', encoding="utf-8") as to_read:
-    reader = csv.reader(to_read)
-    rows = list(reader)
-
-for row in rows:
-    symbol = row[0]
-    income_statement: str = f'https://www.alphavantage.co/query?function=INCOME_STATEMENT&symbol={symbol}&apikey={api_key}'
-    total_revenue = session.get(income_statement)
-    decoded_content: str = total_revenue.content.decode('utf-8')
-    row.append(decoded_content)
-
-    print(row)
-
-# with open('sort_earnings.csv','w', encoding = "utf-8", newline='') as to_write:
-#     writer = csv.writer(to_write)
-#     writer.writerows(rows)
-
-
-
-
-
+# totalrevenue 데이터 긁어와서 sort_earnings에 추가하는 로직 만들기
+# BMO(Before Market 종목들 크롤링 AMO는 investing.com에서 크롤링해도 될듯?)
 # api_key = config.alphavantage_api_key
 # url = "https://www.alphavantage.co/query?function=INCOME_STATEMENT&symbol=WBA&apikey={}".format(api_key)
 # r = requests.get(url)
