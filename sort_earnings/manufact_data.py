@@ -44,7 +44,6 @@ def sort_close_earnings() -> List[List[str]]:
                 symbol = row[0]
                 get_income_statement: str = f'https://www.alphavantage.co/query?function=INCOME_STATEMENT&symbol={symbol}&apikey={api_key}'
                 
-                
                 response = requests.get(get_income_statement)
                 income_statement = response.json()
                 if "quarterlyReports" in income_statement and int(income_statement["quarterlyReports"][0]["totalRevenue"]) > 10000000:
@@ -54,8 +53,6 @@ def sort_close_earnings() -> List[List[str]]:
                     writer.writerow(row)
 
     return sort_result
-
-sort_close_earnings()
 
 # Q. 2번 파일에서 1번 파일을 호출한 후, 1번 파일에서 2번 파일을 다시 호출해도되나?
 
