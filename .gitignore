@@ -1,4 +1,6 @@
+*.csv
 config.py
 koreainvestment.key
 token.dat
 .pylintrc
+
