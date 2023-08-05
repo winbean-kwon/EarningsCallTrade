@@ -7,6 +7,7 @@ import datetime
 from typing import List
 import requests
 import config
+import time
 
 import telegram_bot
 
@@ -35,22 +36,36 @@ def sort_close_earnings() -> List[List[str]]:
     sort_result: List[List[str]] = []
     current = datetime.date.today()
 
+    count = 1
+
     with open('sort_earnings.csv', 'w', encoding = "utf-8", newline='') as to_write:
         writer = csv.writer(to_write)
         for row in get_earnings_calendar()[1:]:
             announce_date = datetime.datetime.strptime(row[2], '%Y-%m-%d').date()
-
-            if (announce_date - current).days < 3 and row[4] != '':
-                symbol = row[0]
-                get_income_statement: str = f'https://www.alphavantage.co/query?function=INCOME_STATEMENT&symbol={symbol}&apikey={api_key}'
-                
-                response = requests.get(get_income_statement)
-                income_statement = response.json()
-                if "quarterlyReports" in income_statement and int(income_statement["quarterlyReports"][0]["totalRevenue"]) > 10000000:
-                    recent_total_revenue = income_statement["quarterlyReports"][0]["totalRevenue"]
-                    row.append(recent_total_revenue)
-                    sort_result.append(row)
-                    writer.writerow(row)
+            try:
+                if (announce_date - current).days < 3 and row[4] != '':
+                    symbol = row[0]
+                    print(symbol)
+                    get_income_statement: str = f'https://www.alphavantage.co/query?function=INCOME_STATEMENT&symbol={symbol}&apikey=""'
+                    response = requests.get(get_income_statement)
+                    print(response)
+                    income_statement = response.json()
+                    time.sleep(5)
+                    if "quarterlyReports" in income_statement and int(income_statement["quarterlyReports"][0]["totalRevenue"]) > 10000000:
+                        recent_total_revenue = income_statement["quarterlyReports"][0]["totalRevenue"]
+                        row.append(recent_total_revenue)
+                        sort_result.append(row)
+                        writer.writerow(row)
+                        print(count)
+                        count += 1
+            
+                if count >= 5:
+                    time.sleep(60)
+                    count = 0
+            
+            except Exception as e:
+                print(f"An error occurred for report at index {row[0]}: {e}")
+                continue
 
     return sort_result
 
