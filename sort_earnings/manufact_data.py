@@ -16,68 +16,70 @@ import telegram_bot
 
 
 api_key: str = config.ALPHAVANTAGE_API_KEY
-EARNINGS_CALENDAR_URL: str = f'https://www.alphavantage.co/query?function=EARNINGS_CALENDAR&horizon=3month&apikey=""'
+EARNINGS_CALENDAR_URL: str = f'https://www.alphavantage.co/query?function=EARNINGS_CALENDAR&horizon=3month&apikey={api_key}'
 session = requests.Session()
 
-# def get_earnings_calendar() -> List[List[str]]:
-#     """
-#     import earnings calendar to list
-#     """
-#     with open('earnings_calendar.csv', 'w', encoding = "utf-8", newline='') as to_write:
-#         earnings_calendar = session.get(EARNINGS_CALENDAR_URL)
-#         decoded_content: str = earnings_calendar.content.decode('utf-8')
-#         my_list: List[List[str]] = list(csv.reader(decoded_content.splitlines(), delimiter=','))
+def get_earnings_calendar() -> List[List[str]]:
+    """
+    import earnings calendar to list
+    """
+    with open('earnings_calendar.csv', 'w', encoding = "utf-8", newline='') as to_write:
+        earnings_calendar = session.get(EARNINGS_CALENDAR_URL)
+        decoded_content: str = earnings_calendar.content.decode('utf-8')
+        my_list: List[List[str]] = list(csv.reader(decoded_content.splitlines(), delimiter=','))
 
-#         writer = csv.writer(to_write)
-#         writer.writerows(my_list)
+        writer = csv.writer(to_write)
+        writer.writerows(my_list)
 
-#     return my_list
+    return my_list
 
-# def sort_close_earnings() -> List[List[str]]:
-#     """
-#     sorts earning calendar to list
-#     """
-#     sort_result: List[List[str]] = []
-#     current = datetime.date.today()
+def sort_close_earnings() -> List[List[str]]:
+    """
+    sorts earning calendar to list
+    """
+    sort_result: List[List[str]] = []
+    current = datetime.date.today()
 
-#     count = 1
+    count = 1
+    with open('earnings_calendar.csv', 'r', encoding = "utf-8", newline='') as to_read:
+        reader = csv.reader(to_read)
+        with open('sort_earnings.csv', 'w', encoding = "utf-8", newline='') as to_write:
+            writer = csv.writer(to_write)
+            for row in list(reader)[1:]:
+                announce_date = datetime.datetime.strptime(row[2], '%Y-%m-%d').date()
+                try:
+                    if (announce_date - current).days < 1 and row[4] != '':
+                        symbol = row[0]
+                        print(symbol)
+                        get_income_statement: str = f'https://www.alphavantage.co/query?function=INCOME_STATEMENT&symbol={symbol}&apikey={api_key}'
+                        response = requests.get(get_income_statement)
+                        income_statement = response.json()
+                        print(income_statement)
+                        time.sleep(5)
+                        if "quarterlyReports" in income_statement and int(income_statement["quarterlyReports"][0]["totalRevenue"]) > 10000000:
+                            recent_total_revenue = income_statement["quarterlyReports"][0]["totalRevenue"]
+                            row.append(recent_total_revenue)
+                            sort_result.append(row)
+                            writer.writerow(row)
+                            print(count)
+                            print(row[0])
+                            count += 1
+                
+                            if count >= 5: # 1분에 api 5번 요청 가능하고, 하루에 100번밖에 안됨.
+                                time.sleep(60)
+                                count = 0
+                
+                except Exception as e:
+                    print(f"An error occurred for report at index {row[0]}: {e}")
+                    continue
 
-#     with open('sort_earnings.csv', 'w', encoding = "utf-8", newline='') as to_write:
-#         writer = csv.writer(to_write)
-#         for row in get_earnings_calendar()[1:]:
-#             announce_date = datetime.datetime.strptime(row[2], '%Y-%m-%d').date()
-#             try:
-#                 if (announce_date - current).days < 3 and row[4] != '':
-#                     symbol = row[0]
-#                     print(symbol)
-#                     get_income_statement: str = f'https://www.alphavantage.co/query?function=INCOME_STATEMENT&symbol={symbol}&apikey=""'
-#                     response = requests.get(get_income_statement)
-#                     print(response)
-#                     income_statement = response.json()
-#                     time.sleep(5)
-#                     if "quarterlyReports" in income_statement and int(income_statement["quarterlyReports"][0]["totalRevenue"]) > 10000000:
-#                         recent_total_revenue = income_statement["quarterlyReports"][0]["totalRevenue"]
-#                         row.append(recent_total_revenue)
-#                         sort_result.append(row)
-#                         writer.writerow(row)
-#                         print(count)
-#                         count += 1
-            
-#                 if count >= 5: # 1분에 api 5번 요청 가능하고, 하루에 100번밖에 안됨.
-#                     time.sleep(60)
-#                     count = 0
-            
-#             except Exception as e:
-#                 print(f"An error occurred for report at index {row[0]}: {e}")
-#                 continue
-
-#     return sort_result
+    return sort_result
 
 def compare():
     with open('sort_earnings.csv', 'r', encoding = "utf-8", newline='') as csv_file:
         reader = csv.reader(csv_file)
         print(crawling.before_total_crawle)
-        with open('sort_earnings.csv', 'a', encoding = "utf-8", newline='') as csv_file:
+        with open('sort_earnings_tomorrow.csv', 'a', encoding = "utf-8", newline='') as csv_file:
             writer = csv.writer(csv_file)
             for row in reader:
                 for key, value in crawling.before_total_crawle.items():
@@ -89,9 +91,6 @@ def compare():
                     if row[0] == key:
                         row.append(value)
                         writer.writerow(row)
-            
-
-compare()
         
 
 
