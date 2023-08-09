@@ -11,7 +11,7 @@ import time
 import sys, os
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
-from trading import crawling
+from trading import crawling_earnings_time
 import telegram_bot
 
 
@@ -48,14 +48,11 @@ def sort_close_earnings() -> List[List[str]]:
             for row in list(reader)[1:]:
                 announce_date = datetime.datetime.strptime(row[2], '%Y-%m-%d').date()
                 try:
-                    if (announce_date - current).days < 1 and row[4] != '':
+                    if 1 < (announce_date - current).days < 2 and row[4] != '':
                         symbol = row[0]
-                        print(symbol)
                         get_income_statement: str = f'https://www.alphavantage.co/query?function=INCOME_STATEMENT&symbol={symbol}&apikey={api_key}'
                         response = requests.get(get_income_statement)
                         income_statement = response.json()
-                        print(income_statement)
-                        time.sleep(5)
                         if "quarterlyReports" in income_statement and int(income_statement["quarterlyReports"][0]["totalRevenue"]) > 10000000:
                             recent_total_revenue = income_statement["quarterlyReports"][0]["totalRevenue"]
                             row.append(recent_total_revenue)
@@ -78,23 +75,23 @@ def sort_close_earnings() -> List[List[str]]:
 def compare():
     with open('sort_earnings.csv', 'r', encoding = "utf-8", newline='') as csv_file:
         reader = csv.reader(csv_file)
-        print(crawling.before_total_crawle)
-        with open('sort_earnings_tomorrow.csv', 'a', encoding = "utf-8", newline='') as csv_file:
+        print(crawling_earnings_time.before_total_crawle)
+        with open('sort_earnings_tomorrow.csv', 'w', encoding = "utf-8", newline='') as csv_file:
             writer = csv.writer(csv_file)
             for row in reader:
-                for key, value in crawling.before_total_crawle.items():
+                for key, value in crawling_earnings_time.before_total_crawle.items():
                     if row[0] == key:
                         row.append(value)
                         writer.writerow(row)
 
-                for key, value in crawling.after_total_crawle.items():
+                for key, value in crawling_earnings_time.after_total_crawle.items():
                     if row[0] == key:
                         row.append(value)
                         writer.writerow(row)
         
+compare()
 
-
-# Q. 2번 파일에서 1번 파일을 호출한 후, 1번 파일에서 2번 파일을 다시 호출해도되나?
+# ET 는 한국시간과 13시간 차이남 (한국이 더 빠름)
 
 # totalrevenue 데이터 긁어와서 sort_earnings에 추가하는 로직 만들기
 # BMO(Before Market 종목들 크롤링 AMO는 investing.com에서 크롤링해도 될듯?)
